@@ -1,6 +1,7 @@
 
 const $ = id => document.getElementById(id);
 let latest = null;
+let latestCandles = null;
 let lastRecordedKey = null;
 const storeKey = "btc15m_paper_trades_v1";
 
@@ -9,15 +10,32 @@ function fmtMoney(v){return "$"+Number(v).toLocaleString("en-US",{minimumFractio
 function getTrades(){try{return JSON.parse(localStorage.getItem(storeKey)||"[]")}catch{return []}}
 function saveTrades(t){localStorage.setItem(storeKey,JSON.stringify(t));}
 async function fetchCandles(){
-  const urls=[
-    "https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=100",
-    "https://api.binance.us/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=100"
+  // Coinbase Exchange's public BTC-USD candles are accessible without an account
+  // and are a better first source for users in the United States.
+  const sources = [
+    {
+      name: "Coinbase",
+      url: "https://api.exchange.coinbase.com/products/BTC-USD/candles?granularity=60",
+      parse: raw => raw.map(k => ({time:k[0]*1000, low:+k[1], high:+k[2], open:+k[3], close:+k[4], volume:+k[5]})).reverse()
+    },
+    {
+      name: "Binance.US",
+      url: "https://api.binance.us/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=100",
+      parse: raw => raw.map(k => ({time:k[0],open:+k[1],high:+k[2],low:+k[3],close:+k[4],volume:+k[5]}))
+    }
   ];
-  let response, error;
-  for(const url of urls){try{response=await fetch(url,{cache:"no-store"});if(response.ok)break;error=new Error("HTTP "+response.status)}catch(e){error=e}}
-  if(!response || !response.ok) throw error || new Error("Price feed unavailable");
-  const raw=await response.json();
-  return raw.map(k=>({time:k[0],open:+k[1],high:+k[2],low:+k[3],close:+k[4],volume:+k[5]}));
+  let lastError = null;
+  for (const source of sources) {
+    try {
+      const response = await fetch(source.url, {cache:"no-store", headers:{"Accept":"application/json"}});
+      if (!response.ok) throw new Error(source.name + " HTTP " + response.status);
+      const raw = await response.json();
+      const candles = source.parse(raw).filter(c => Number.isFinite(c.close) && c.close > 0 && Number.isFinite(c.volume));
+      if (candles.length < 30) throw new Error(source.name + " returned too few candles");
+      return candles.slice(-100);
+    } catch (e) { lastError = e; }
+  }
+  throw lastError || new Error("All public BTC price feeds are unavailable");
 }
 function ema(values,period){const a=2/(period+1);let out=values[0];for(let i=1;i<values.length;i++)out=values[i]*a+out*(1-a);return out;}
 function calculateRSI(closes,period=14){
@@ -38,7 +56,7 @@ function analyze(candles){
   if(rsi>=72&&mom3<0){score-=1;reasons.push("Potential bearish reversal: elevated RSI, momentum rolling over")}
   else if(rsi<=28&&mom3>0){score+=1;reasons.push("Potential bullish reversal: low RSI, momentum turning up")}
   const pUp=1/(1+Math.exp(-.42*score));
-  return {price,rsi,mom3,volRatio,score,pUp,time:candles.at(-1).time};
+  return {price,rsi,mom3,volRatio,score,pUp,time:candles.at(-1).time,reasons};
 }
 function render(){
   if(!latest)return;
@@ -88,13 +106,12 @@ function settleTrade(id){
 }
 async function refresh(){
   $("refreshBtn").textContent="Refreshing…";
-  try{const candles=await fetchCandles();latest=analyze(candles);render();$("paperStatus").textContent="Live public BTC data received."}
-  catch(e){$("updated").textContent="Feed unavailable";$("signalText").textContent="DATA ERROR";$("signalDetail").textContent=e.message+" · Try again shortly."}
+  try{latestCandles=await fetchCandles();latest=analyze(latestCandles);render();$("paperStatus").textContent="Live public BTC data received."}
+  catch(e){$("updated").textContent="Feed unavailable";$("signalText").textContent="DATA ERROR";$("signalDetail").textContent=(e?.message||"Unknown feed error")+" · Try again shortly."}
   finally{$("refreshBtn").textContent="Refresh BTC data"}
 }
 $("refreshBtn").addEventListener("click",refresh);
-["reference","upAsk","downAsk","minEdge"].forEach(id=>$(id).addEventListener("input",()=>{if(latest){latest=analyzeCache(latest);render()}}));
-function analyzeCache(old){return old}
+["reference","upAsk","downAsk","minEdge"].forEach(id=>$(id).addEventListener("input",()=>{if(latestCandles){latest=analyze(latestCandles);render()}}));
 $("paperBtn").addEventListener("click",()=>{
   const side=$("paperBtn").dataset.side,price=Number($("paperBtn").dataset.price),stake=num("stake",10);
   if(!side||side==="PASS"||!Number.isFinite(price)||price<=0||price>=1||stake<=0)return;

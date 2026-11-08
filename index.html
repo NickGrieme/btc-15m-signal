@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101827">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="BTC Signal">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <title>BTC 15m Signal</title>
+  <style>
+    :root{color-scheme:dark;--bg:#0b1220;--panel:#121d2e;--muted:#9aabc2;--line:#26364c;--green:#34d399;--red:#fb7185;--yellow:#fbbf24;--blue:#60a5fa}
+    *{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#101827,#0b1220 45%);color:#f3f6fb;font:16px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:env(safe-area-inset-top) 16px calc(24px + env(safe-area-inset-bottom))}
+    main{max-width:760px;margin:0 auto}.top{display:flex;justify-content:space-between;align-items:center;padding:16px 0 8px}.brand{font-weight:800;font-size:20px;letter-spacing:.2px}.pill{border:1px solid #35506c;border-radius:99px;padding:6px 10px;color:#a9c9ed;font-size:11px;font-weight:700;letter-spacing:.08em}
+    h1{font-size:26px;margin:14px 0 4px}.sub{color:var(--muted);font-size:13px;line-height:1.45}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:16px 0}.card{background:rgba(18,29,46,.94);border:1px solid var(--line);border-radius:16px;padding:14px;min-width:0}.label{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.09em}.value{font-size:24px;font-weight:800;margin-top:7px;overflow-wrap:anywhere}.small{font-size:13px;color:var(--muted);margin-top:5px}
+    .signal{padding:20px;border-radius:18px;text-align:center;border:1px solid var(--line);background:var(--panel);margin:12px 0}.signal strong{display:block;font-size:30px;letter-spacing:.04em}.signal.up strong{color:var(--green)}.signal.down strong{color:var(--red)}.signal.pass strong{color:var(--yellow)}
+    h2{font-size:17px;margin:22px 0 10px}.field{margin:10px 0}.field label{display:block;color:var(--muted);font-size:12px;margin-bottom:6px}input{width:100%;padding:13px 12px;background:#0b1422;border:1px solid #34465e;border-radius:11px;color:#fff;font-size:16px}button{border:0;border-radius:12px;padding:13px 15px;font-size:15px;font-weight:750;background:#2563eb;color:white;width:100%;margin-top:8px}button.secondary{background:#243449;color:#e6eef8}button.danger{background:#7f1d1d}.row{display:flex;gap:9px}.row>*{flex:1;min-width:0}.reason{padding:9px 0;border-bottom:1px solid var(--line);font-size:13px;color:#d7e1ee}.notice{font-size:12px;line-height:1.5;color:#b7c6d8;background:#18263a;border:1px solid #30445f;padding:12px;border-radius:12px;margin-top:14px}.trade{padding:12px 0;border-bottom:1px solid var(--line);font-size:13px}.trade b{font-size:14px}.good{color:var(--green)}.bad{color:var(--red)}.muted{color:var(--muted)}footer{text-align:center;color:#7f91a8;font-size:11px;margin:22px 0}
+    @media(min-width:600px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}.value{font-size:22px}}
+  </style>
+</head>
+<body>
+<main>
+  <div class="top"><div class="brand">₿ BTC SIGNAL DESK</div><div class="pill">PAPER MODE</div></div>
+  <h1>15-Minute BTC Monitor</h1>
+  <div class="sub">Live public BTC price data · Hybrid momentum/reversal model · Simulated trades only</div>
+
+  <div class="grid">
+    <div class="card"><div class="label">BTC / USDT</div><div class="value" id="btcPrice">Loading…</div><div class="small" id="updated">Waiting for price feed</div></div>
+    <div class="card"><div class="label">Model UP estimate</div><div class="value" id="pUp">—</div><div class="small">Heuristic, not calibrated</div></div>
+    <div class="card"><div class="label">UP estimated edge</div><div class="value" id="upEdge">—</div><div class="small">Model estimate minus ask</div></div>
+    <div class="card"><div class="label">DOWN estimated edge</div><div class="value" id="downEdge">—</div><div class="small">Model estimate minus ask</div></div>
+  </div>
+
+  <div class="signal pass" id="signalBox"><div class="label">Current model read</div><strong id="signalText">LOADING</strong><div class="small" id="signalDetail">Fetching BTC candles…</div></div>
+
+  <h2>Market inputs</h2>
+  <div class="card">
+    <div class="field"><label for="marketName">Market / round label</label><input id="marketName" value="BTC 15m round" autocomplete="off"></div>
+    <div class="field"><label for="reference">Official market reference / opening price ($)</label><input id="reference" type="number" inputmode="decimal" value="75000" step="0.01"></div>
+    <div class="row">
+      <div class="field"><label for="upAsk">UP ask ($0-$1)</label><input id="upAsk" type="number" inputmode="decimal" min=".01" max=".99" value=".50" step=".01"></div>
+      <div class="field"><label for="downAsk">DOWN ask ($0-$1)</label><input id="downAsk" type="number" inputmode="decimal" min=".01" max=".99" value=".50" step=".01"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="stake">Paper stake ($)</label><input id="stake" type="number" inputmode="decimal" min="1" value="10" step="1"></div>
+      <div class="field"><label for="minEdge">Minimum edge (percentage points)</label><input id="minEdge" type="number" inputmode="decimal" min="1" max="20" value="5" step="1"></div>
+    </div>
+    <button id="refreshBtn">Refresh BTC data</button>
+    <button class="secondary" id="paperBtn">Record suggested paper trade</button>
+    <div class="small" id="paperStatus">No trade recorded.</div>
+  </div>
+
+  <h2>Signal ingredients</h2>
+  <div class="card">
+    <div class="row"><div><div class="label">Momentum score</div><div class="value" id="score">—</div></div><div><div class="label">RSI (1m)</div><div class="value" id="rsi">—</div></div></div>
+    <div class="row" style="margin-top:12px"><div><div class="label">3m momentum</div><div class="value" id="mom">—</div></div><div><div class="label">Relative volume</div><div class="value" id="vol">—</div></div></div>
+    <div id="reasons" style="margin-top:12px"></div>
+  </div>
+
+  <h2>Paper trading ledger</h2>
+  <div class="grid">
+    <div class="card"><div class="label">Settled P&L</div><div class="value" id="pnl">$0.00</div></div>
+    <div class="card"><div class="label">Win rate</div><div class="value" id="winRate">—</div></div>
+    <div class="card"><div class="label">Open trades</div><div class="value" id="openCount">0</div></div>
+    <div class="card"><div class="label">Settled trades</div><div class="value" id="settledCount">0</div></div>
+  </div>
+  <div class="card" id="ledger"><div class="small">No paper trades yet.</div></div>
+
+  <div class="notice"><b>Important:</b> This app does not connect to Polymarket, access private APIs, connect a wallet, or place real orders. Enter market prices manually only from sources you are permitted to access. The probability is an experimental indicator score, not a validated forecast. Always use the market's official reference and resolution rules. Paper results are not evidence of future profitability.</div>
+  <footer>BTC Signal Desk · Public Binance spot candles · Data refreshes every 15 seconds while open</footer>
+</main>
+<script src="app.js"></script>
+</body>
+</html>

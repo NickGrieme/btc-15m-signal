@@ -1,5 +1,5 @@
-const CACHE = "btc-signal-v3";
-const CORE = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
+const CACHE = "btc-signal-v4";
+const CORE = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./app.js"];
 
 self.addEventListener("install", event => {
   self.skipWaiting();

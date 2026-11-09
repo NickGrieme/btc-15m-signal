@@ -5,6 +5,14 @@ let currentMarket = null;
 let manualReference = null;
 let chainlinkPrice = null;
 let chainlinkAt = 0;
+
+// Polymarket 60-second TWAP tracking
+let twapPrice = null;
+let twapAt = 0;
+let twapSourceAt = 0;
+let twapHistory = [];
+let openingReferences = {};
+
 let lastRecordedKey = null;
 let refreshBusy = false;
 const storeKey = "btc15m_paper_trades_v1";

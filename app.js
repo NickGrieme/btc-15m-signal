@@ -262,6 +262,25 @@ if(
       sourceAt,
       price
     });
+    const boundaryMs = Math.round(sourceAt / 900000) * 900000;
+
+    if(sourceAt === boundaryMs){
+      const roundStart = boundaryMs / 1000;
+
+      openingReferences[roundStart] = price;
+
+      localStorage.setItem(
+        "btc15m_opening_refs_v1",
+        JSON.stringify(openingReferences)
+      );
+
+      console.log(
+        "OFFICIAL ROUND OPENING TWAP CAPTURED:",
+        price,
+        "Round start:",
+        roundStart
+      );
+    }
 
     const cutoff = Date.now() - 30 * 60 * 1000;
     twapHistory = twapHistory.filter(x => x.sourceAt >= cutoff);

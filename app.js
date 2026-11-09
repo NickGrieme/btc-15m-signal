@@ -242,17 +242,36 @@ function connectChainlink(){
         chainlinkAt = Date.now();
       }
 
-      if(
-        d.topic === "crypto_prices_twap_sixty" &&
-        Number(p.window_s) === 60
-      ){
-        console.log(
-          "BTC TWAP 60s:",
-          price,
-          "Source timestamp:",
-          p.timestamp
-        );
-      }
+if(
+  d.topic === "crypto_prices_twap_sixty" &&
+  Number(p.window_s) === 60
+){
+  const rawTimestamp = Number(p.timestamp);
+  const sourceAt = Number.isFinite(rawTimestamp) && rawTimestamp > 0
+    ? (rawTimestamp < 1e12 ? rawTimestamp * 1000 : rawTimestamp)
+    : null;
+
+  twapPrice = price;
+  twapAt = Date.now();
+  twapSourceAt = sourceAt;
+
+  if(sourceAt !== null){
+    twapHistory.push({
+      sourceAt,
+      price
+    });
+
+    const cutoff = Date.now() - 30 * 60 * 1000;
+    twapHistory = twapHistory.filter(x => x.sourceAt >= cutoff);
+  }
+
+  console.log(
+    "BTC TWAP 60s saved:",
+    price,
+    "Source timestamp:",
+    p.timestamp
+  );
+}
 
       if(latestCandles){
         latest = analyze(latestCandles);

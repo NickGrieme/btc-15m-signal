@@ -20,7 +20,14 @@ let refreshBusy = false;
 const storeKey = "btc15m_paper_trades_v1";
 
 function num(id, fallback=0){ const v=Number($(id).value); return Number.isFinite(v)?v:fallback; }
-function getReference(){ return manualReference!==null ? manualReference : (Number.isFinite(currentMarket?.reference) ? currentMarket.reference : null); }
+function getReference(){
+  if(manualReference !== null) return manualReference;
+  if(!currentMarket) return null;
+
+  const savedReference = openingReferences[currentMarket.start];
+
+  return Number.isFinite(savedReference) ? savedReference : null;
+}
 function fmtMoney(v){return "$"+Number(v).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});}
 function getTrades(){try{return JSON.parse(localStorage.getItem(storeKey)||"[]")}catch{return []}}
 function saveTrades(t){localStorage.setItem(storeKey,JSON.stringify(t));}

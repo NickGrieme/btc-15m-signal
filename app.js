@@ -127,6 +127,7 @@ function getReference() {
   }
 
   return manualReference;
+}
 function fmtMoney(value) {
   return "$" + Number(value).toLocaleString("en-US", {
     minimumFractionDigits: 2,

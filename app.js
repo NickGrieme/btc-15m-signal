@@ -31,6 +31,10 @@ let latestCandles = null;
 let currentMarket = null;
 let manualReference = null;
 
+let officialReference = null;
+let officialReferenceRound = null;
+let officialReferenceStatus = "Waiting for Polymarket's official opening reference.";
+
 let chainlinkPrice = null;
 let chainlinkAt = 0;
 let chainlinkSourceAt = 0;

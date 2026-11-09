@@ -54,6 +54,7 @@ async function fetchPolymarket(){
     const prices=asks.map(x=>Number(x.price)).filter(x=>Number.isFinite(x)&&x>0&&x<1);
     return prices.length?Math.min(...prices):null;
   };
+  console.log("POLYMARKET STRIKE DATA:", strikeData);
   const open=Number(strikeData?.openPrice);
   return {
     slug, title:event.title||market.question||"BTC Up or Down 15m",

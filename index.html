@@ -24,8 +24,7 @@
 <main>
   <div class="top"><div class="brand">₿ BTC SIGNAL DESK</div><div class="pill">PAPER MODE</div></div>
   <h1>15-Minute BTC Monitor</h1>
-  <div class="sub">Live BTC indicators · Automatic Polymarket market data · Simulated trades only</div>
-  <div class="grid"><div class="card"><div class="label">Active Polymarket round</div><div class="value" id="countdown">--:--</div><div class="small" id="phase">Locating current round</div></div><div class="card"><div class="label">Entry timing</div><div class="value" id="marketTitle" style="font-size:15px">Finding active BTC 15m market…</div><div class="small" id="marketStatus">Connecting to Polymarket public data…</div></div></div>
+  <div class="sub">Live public BTC price data · Hybrid momentum/reversal model · Simulated trades only</div>
 
   <div class="grid">
     <div class="card"><div class="label">BTC / USDT</div><div class="value" id="btcPrice">Loading…</div><div class="small" id="updated">Waiting for price feed</div></div>
@@ -38,17 +37,17 @@
 
   <h2>Market inputs</h2>
   <div class="card">
-    <div class="field"><label for="marketName">Automatically detected Polymarket round</label><input id="marketName" value="Finding market…" readonly></div>
-    <div class="field"><label for="reference">Official Polymarket opening reference ($)</label><input id="reference" type="text" value="Waiting for official reference…" readonly></div>
+    <div class="field"><label for="marketName">Market / round label</label><input id="marketName" value="BTC 15m round" autocomplete="off"></div>
+    <div class="field"><label for="reference">Official market reference / opening price ($)</label><input id="reference" type="number" inputmode="decimal" value="75000" step="0.01"></div>
     <div class="row">
-      <div class="field"><label for="upAsk">Polymarket UP best ask ($0-$1)</label><input id="upAsk" type="text" value="—" readonly></div>
-      <div class="field"><label for="downAsk">Polymarket DOWN best ask ($0-$1)</label><input id="downAsk" type="text" value="—" readonly></div>
+      <div class="field"><label for="upAsk">UP ask ($0-$1)</label><input id="upAsk" type="number" inputmode="decimal" min=".01" max=".99" value=".50" step=".01"></div>
+      <div class="field"><label for="downAsk">DOWN ask ($0-$1)</label><input id="downAsk" type="number" inputmode="decimal" min=".01" max=".99" value=".50" step=".01"></div>
     </div>
     <div class="row">
       <div class="field"><label for="stake">Paper stake ($)</label><input id="stake" type="number" inputmode="decimal" min="1" value="10" step="1"></div>
       <div class="field"><label for="minEdge">Minimum edge (percentage points)</label><input id="minEdge" type="number" inputmode="decimal" min="1" max="20" value="5" step="1"></div>
     </div>
-    <button id="refreshBtn">Refresh all data</button>
+    <button id="refreshBtn">Refresh BTC data</button>
     <button class="secondary" id="paperBtn">Record suggested paper trade</button>
     <div class="small" id="paperStatus">No trade recorded.</div>
   </div>
@@ -69,9 +68,9 @@
   </div>
   <div class="card" id="ledger"><div class="small">No paper trades yet.</div></div>
 
-  <div class="notice"><b>Important:</b> This app reads public Polymarket market metadata and order books plus Polymarket Chainlink BTC/USD price data. It does not connect a wallet or place real orders. The model probability is experimental and not calibrated. If the official opening reference, Chainlink price, or both market asks are unavailable, the app should PASS rather than guess. Paper results are not evidence of future profitability.</div>
-  <footer>BTC Signal Desk · Public market data · Automatic refresh every 15 seconds while open</footer>
+  <div class="notice"><b>Important:</b> This app does not connect to Polymarket, access private APIs, connect a wallet, or place real orders. Enter market prices manually only from sources you are permitted to access. The probability is an experimental indicator score, not a validated forecast. Always use the market's official reference and resolution rules. Paper results are not evidence of future profitability.</div>
+  <footer>BTC Signal Desk · Public Binance spot candles · Data refreshes every 15 seconds while open</footer>
 </main>
-<script src="app.js?v=4"></script>
+<script src="app.js"></script>
 </body>
 </html>

@@ -116,14 +116,17 @@ function getExpectedRound() {
 }
 
 function getReference() {
-  if (manualReference !== null) return manualReference;
   if (!currentMarket) return null;
 
-  const saved = openingReferences[String(currentMarket.start)];
-  const value = Number(saved);
-  return Number.isFinite(value) && value > 0 ? value : null;
-}
+  if (
+    officialReferenceRound === currentMarket.start &&
+    Number.isFinite(officialReference) &&
+    officialReference > 0
+  ) {
+    return officialReference;
+  }
 
+  return manualReference;
 function fmtMoney(value) {
   return "$" + Number(value).toLocaleString("en-US", {
     minimumFractionDigits: 2,

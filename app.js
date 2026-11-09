@@ -900,80 +900,101 @@ function settleTrade(id) {
 /* Refresh loop                                                               */
 /* -------------------------------------------------------------------------- */
 
+
 async function refresh() {
   if (refreshBusy) return;
 
   refreshBusy = true;
+
   const refreshButton = $("refreshBtn");
   if (refreshButton) refreshButton.textContent = "Refreshing…";
 
   try {
     const expected = getExpectedRound();
+
     const marketNameField = $("marketName");
     if (marketNameField) marketNameField.value = expected.slug;
 
- if (currentMarket && currentMarket.start !== expected.start) {
-  currentMarket = null;
-  lastRecordedKey = null;
-}
+    if (currentMarket && currentMarket.start !== expected.start) {
+      currentMarket = null;
+      lastRecordedKey = null;
+    }
 
-if (officialReferenceRound !== expected.start) {
-  officialReference = null;
-  officialReferenceRound = null;
-  officialReferenceStatus = "Waiting for Polymarket's official opening reference.";
-  manualReference = null;
-}
+    if (officialReferenceRound !== expected.start) {
+      officialReference = null;
+      officialReferenceRound = null;
+      officialReferenceStatus =
+        "Waiting for Polymarket's official opening reference.";
+      manualReference = null;
+    }
 
-const [candlesResult, marketResult, referenceResult] = await Promise.allSettled([
-  fetchCandles(),
-  fetchPolymarket(),
-  fetchOfficialReference(expected.start)
-]);
+    const [candlesResult, marketResult, referenceResult] =
+      await Promise.allSettled([
+        fetchCandles(),
+        fetchPolymarket(),
+        fetchOfficialReference(expected.start)
+      ]);
 
-const errors = [];
+    const errors = [];
 
-if (referenceResult.status === "rejected") {
-  console.warn("Official reference lookup failed:", referenceResult.reason);
-}
-
-if (candlesResult.status === "fulfilled") {
+    if (referenceResult.status === "rejected") {
+      console.warn(
+        "Official reference lookup failed:",
+        referenceResult.reason
+      );
+    }
 
     if (candlesResult.status === "fulfilled") {
       latestCandles = candlesResult.value;
       latest = analyze(latestCandles);
     } else {
-      errors.push(`BTC candles: ${candlesResult.reason?.message || "unavailable"}`);
+      errors.push(
+        `BTC candles: ${candlesResult.reason?.message || "unavailable"}`
+      );
     }
 
     if (marketResult.status === "fulfilled") {
       currentMarket = marketResult.value;
     } else {
-      errors.push(`Polymarket: ${marketResult.reason?.message || "unavailable"}`);
+      errors.push(
+        `Polymarket: ${marketResult.reason?.message || "unavailable"}`
+      );
+    }
+
+    if (currentMarket) {
+      currentMarket.referenceStatus =
+        officialReferenceRound === currentMarket.start &&
+        Number.isFinite(officialReference) &&
+        officialReference > 0
+          ? `Official Polymarket reference: ${fmtMoney(officialReference)}`
+          : officialReferenceStatus;
     }
 
     if (latest) render();
 
     if (errors.length) {
-      setText("paperStatus", `${errors.join(" | ")}. No signal unless all required data is confirmed.`);
+      setText(
+        "paperStatus",
+        `${errors.join(" | ")}. No signal unless all required data is confirmed.`
+      );
     } else {
-      setText("paperStatus", "BTC indicators, Polymarket market data, and paper-only safeguards refreshed.");
+      setText(
+        "paperStatus",
+        "BTC indicators, Polymarket market data, and official reference lookup refreshed."
+      );
     }
 
-    if (currentMarket && latestCandles) {
-  if (officialReferenceRound === currentMarket?.start && officialReference !== null) {
-  officialReferenceStatus = `Official Polymarket reference: ${fmtMoney(officialReference)}`;
-}
-      if (reference === null) {
-        currentMarket.referenceStatus = "Waiting for opening Chainlink 60-second TWAP report";
-      } else {
-        currentMarket.referenceStatus = `Opening Chainlink 60-second TWAP captured: ${fmtMoney(reference)}`;
-      }
-    }
   } catch (error) {
     console.error("Dashboard refresh error:", error);
-    setText("paperStatus", `Refresh issue: ${error.message}. No new paper entry unless data is confirmed.`);
+    setText(
+      "paperStatus",
+      `Refresh issue: ${error.message}. No new paper entry unless data is confirmed.`
+    );
   } finally {
-    if (refreshButton) refreshButton.textContent = "Refresh all data";
+    if (refreshButton) {
+      refreshButton.textContent = "Refresh all data";
+    }
+
     refreshBusy = false;
   }
 }

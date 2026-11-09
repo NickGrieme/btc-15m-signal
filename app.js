@@ -89,6 +89,45 @@ function roundClock(){
   let phase=remaining>600?"WAIT · Opens at 10 minutes remaining":remaining>420?"INITIAL SCAN":remaining>300?"CONFIRMATION WINDOW":remaining>120?"FINAL EVALUATION": "NO NEW ENTRIES";
   return {remaining,elapsed,phase};
 }
+async function sendSignalToCloudflare(side, upAsk, downAsk, upEdge, downEdge, reference) {
+  if (side === "PASS" || !currentMarket || lastRecordedKey === currentMarket.slug) return;
+
+  const roundId = currentMarket.slug;
+  lastRecordedKey = roundId;
+
+  try {
+    const response = await fetch("https://btc-15m-accuracy.nicholasgrieme.workers.dev/signal", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        round_id: roundId,
+        signal: side,
+        model_up_probability: latest.pUp,
+        up_ask: upAsk,
+        down_ask: downAsk,
+        up_edge: upEdge,
+        down_edge: downEdge,
+        btc_reference: reference,
+        btc_entry: latest.price,
+        notes: {
+          score: latest.score,
+          rsi: latest.rsi,
+          momentum: latest.mom3,
+          volume_ratio: latest.volRatio,
+          price_source: latest.priceSource
+        }
+      })
+    });
+
+    const result = await response.json();
+    $("paperStatus").textContent = result.ok
+      ? "Signal sent to Cloudflare for accuracy tracking."
+      : "Cloudflare recording error: " + (result.error || "Unknown error");
+  } catch (error) {
+    lastRecordedKey = null;
+    $("paperStatus").textContent = "Signal recording failed: " + error.message;
+  }
+}
 function render(){
   if(!latest)return;
   const clock=roundClock(),reference=getReference(),marketFresh=!!currentMarket&&(Date.now()-currentMarket.fetchedAt<30000)&&(currentMarket.end>Math.floor(Date.now()/1000)),marketReady=!!(marketFresh&&reference&&currentMarket?.upAsk!==null&&currentMarket?.downAsk!==null);
@@ -103,6 +142,7 @@ function render(){
   else if(latest.score<=-2&&downEdge>=edgeFloor)side="DOWN";
   else detail="Conditions do not meet both the score and edge thresholds.";
   if(side!=="PASS")detail=`Experimental ${side} candidate · ${clock.phase}. Paper testing only.`;
+  sendSignalToCloudflare(side, upAsk, downAsk, upEdge, downEdge, reference);
   $("btcPrice").textContent=fmtMoney(latest.price);
   $("updated").textContent=`${latest.priceSource} · ${new Date().toLocaleTimeString()}`;
   $("pUp").textContent=(latest.pUp*100).toFixed(1)+"%";

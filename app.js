@@ -45,7 +45,7 @@ async function fetchPolymarket(){
   outcomes.forEach((o,i)=>{if(tokens[i])tokenBySide[String(o).toLowerCase()]=tokens[i];});
   if(!tokenBySide.up||!tokenBySide.down) throw new Error("Could not identify UP and DOWN market tokens");
   const [strikeData,upBook,downBook]=await Promise.all([
-    getJSON(`https://polymarket.com/api/crypto/crypto-price?symbol=BTC&eventStartTime=${encodeURIComponent(iso(start))}&variant=fifteen&endDate=${encodeURIComponent(iso(end))}`).catch(()=>null),
+    getJSON(`https://btc-15m-accuracy.nicholasgrieme.workers.dev/reference?start=${start}`).catch(()=>null),
     getJSON(`https://clob.polymarket.com/book?token_id=${encodeURIComponent(tokenBySide.up)}`).catch(()=>null),
     getJSON(`https://clob.polymarket.com/book?token_id=${encodeURIComponent(tokenBySide.down)}`).catch(()=>null)
   ]);

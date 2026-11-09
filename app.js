@@ -924,15 +924,19 @@ if (officialReferenceRound !== expected.start) {
   manualReference = null;
 }
 
-   const [candlesResult, marketResult, referenceResult] = await Promise.allSettled([
+const [candlesResult, marketResult, referenceResult] = await Promise.allSettled([
   fetchCandles(),
   fetchPolymarket(),
   fetchOfficialReference(expected.start)
 ]);
 
-  if (referenceResult.status === "rejected") {
+const errors = [];
+
+if (referenceResult.status === "rejected") {
   console.warn("Official reference lookup failed:", referenceResult.reason);
 }
+
+if (candlesResult.status === "fulfilled") {
 
     if (candlesResult.status === "fulfilled") {
       latestCandles = candlesResult.value;

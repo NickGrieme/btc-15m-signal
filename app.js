@@ -128,6 +128,67 @@ function getReference() {
 
   return manualReference;
 }
+async function fetchOfficialReference(roundStart) {
+  if (
+    officialReferenceRound === roundStart &&
+    Number.isFinite(officialReference) &&
+    officialReference > 0
+  ) {
+    return officialReference;
+  }
+
+  officialReferenceStatus = "Checking Polymarket for official opening reference...";
+
+  try {
+    const response = await fetch(
+      `${WORKER_URL}/reference?start=${roundStart}`,
+      { cache: "no-store" }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || data.ok !== true) {
+      officialReferenceStatus = data.error || "Official reference not published yet.";
+      console.log("Official reference pending:", officialReferenceStatus);
+      return null;
+    }
+
+    const price = Number(data.openPrice);
+
+    if (!Number.isFinite(price) || price <= 0) {
+      officialReferenceStatus = "Invalid official reference received.";
+      return null;
+    }
+
+    officialReference = price;
+    officialReferenceRound = roundStart;
+    officialReferenceStatus = `Official Polymarket reference: $${price.toFixed(2)}`;
+
+    console.log("OFFICIAL POLYMARKET OPENING REFERENCE:", {
+      roundStart,
+      price,
+      source: data.source
+    });
+
+    const referenceInput = $("reference");
+
+    if (referenceInput && document.activeElement !== referenceInput) {
+      referenceInput.value = price.toFixed(2);
+    }
+
+    if (latestCandles) {
+      latest = analyze(latestCandles);
+      render();
+    }
+
+    return price;
+
+  } catch (error) {
+    officialReferenceStatus = `Reference lookup failed: ${error.message}`;
+    console.warn(officialReferenceStatus);
+    return null;
+  }
+}
 function fmtMoney(value) {
   return "$" + Number(value).toLocaleString("en-US", {
     minimumFractionDigits: 2,
@@ -851,17 +912,27 @@ async function refresh() {
     const marketNameField = $("marketName");
     if (marketNameField) marketNameField.value = expected.slug;
 
-    if (currentMarket && currentMarket.start !== expected.start) {
-      currentMarket = null;
-      lastRecordedKey = null;
-    }
+ if (currentMarket && currentMarket.start !== expected.start) {
+  currentMarket = null;
+  lastRecordedKey = null;
+}
 
-    const [candlesResult, marketResult] = await Promise.allSettled([
-      fetchCandles(),
-      fetchPolymarket()
-    ]);
+if (officialReferenceRound !== expected.start) {
+  officialReference = null;
+  officialReferenceRound = null;
+  officialReferenceStatus = "Waiting for Polymarket's official opening reference.";
+  manualReference = null;
+}
 
-    const errors = [];
+   const [candlesResult, marketResult, referenceResult] = await Promise.allSettled([
+  fetchCandles(),
+  fetchPolymarket(),
+  fetchOfficialReference(expected.start)
+]);
+
+  if (referenceResult.status === "rejected") {
+  console.warn("Official reference lookup failed:", referenceResult.reason);
+}
 
     if (candlesResult.status === "fulfilled") {
       latestCandles = candlesResult.value;
@@ -885,7 +956,9 @@ async function refresh() {
     }
 
     if (currentMarket && latestCandles) {
-      const reference = getReference();
+  if (officialReferenceRound === currentMarket?.start && officialReference !== null) {
+  officialReferenceStatus = `Official Polymarket reference: ${fmtMoney(officialReference)}`;
+}
       if (reference === null) {
         currentMarket.referenceStatus = "Waiting for opening Chainlink 60-second TWAP report";
       } else {

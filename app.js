@@ -184,11 +184,87 @@ async function refresh(){
   }finally{$("refreshBtn").textContent="Refresh all data";refreshBusy=false;}
 }
 function connectChainlink(){
-  if(!("WebSocket" in window))return;
-  let ws;try{ws=new WebSocket("wss://ws-live-data.polymarket.com");}catch{return;}
-  ws.onopen=()=>ws.send(JSON.stringify({action:"subscribe",subscriptions:[{topic:"crypto_prices_chainlink",type:"*"}]}));
-  ws.onmessage=event=>{try{const d=JSON.parse(event.data),p=d.payload||{};if(String(p.symbol||"").toLowerCase()==="btc/usd"&&Number(p.value)>0){chainlinkPrice=Number(p.value);chainlinkAt=Date.now();if(latestCandles){latest=analyze(latestCandles);render();}}}catch{}};
-  ws.onclose=()=>setTimeout(connectChainlink,5000);ws.onerror=()=>{try{ws.close();}catch{}};
+  if(!("WebSocket" in window)) return;
+
+  let ws;
+
+  try {
+    ws = new WebSocket("wss://ws-live-data.polymarket.com");
+  } catch(error) {
+    console.error("Polymarket WebSocket error:", error);
+    return;
+  }
+
+  ws.onopen = () => {
+    const filter = JSON.stringify({symbol:"btc/usd"});
+
+    ws.send(JSON.stringify({
+      action:"subscribe",
+      subscriptions:[
+        {
+          topic:"crypto_prices_chainlink",
+          type:"update",
+          filters:filter
+        },
+        {
+          topic:"crypto_prices_twap_sixty",
+          type:"update",
+          filters:filter
+        }
+      ]
+    }));
+
+    console.log("Subscribed to Chainlink BTC and 60-second TWAP.");
+  };
+
+  ws.onmessage = event => {
+    try {
+      const d = JSON.parse(event.data);
+      const p = d.payload || {};
+      const price = Number(p.value);
+
+      if (
+        String(p.symbol || "").toLowerCase() !== "btc/usd" ||
+        !Number.isFinite(price) ||
+        price <= 0
+      ) return;
+
+      if(d.topic === "crypto_prices_chainlink"){
+        chainlinkPrice = price;
+        chainlinkAt = Date.now();
+      }
+
+      if(
+        d.topic === "crypto_prices_twap_sixty" &&
+        Number(p.window_s) === 60
+      ){
+        console.log(
+          "BTC TWAP 60s:",
+          price,
+          "Source timestamp:",
+          p.timestamp
+        );
+      }
+
+      if(latestCandles){
+        latest = analyze(latestCandles);
+        render();
+      }
+
+    } catch(error) {
+      console.warn("Price feed parsing error:", error);
+    }
+  };
+
+  ws.onclose = () => {
+    console.warn("Price feed disconnected. Reconnecting...");
+    setTimeout(connectChainlink,5000);
+  };
+
+  ws.onerror = error => {
+    console.error("Price feed connection error:", error);
+    try { ws.close(); } catch {}
+  };
 }
 $("refreshBtn").addEventListener("click",refresh);
 $("minEdge").addEventListener("input",()=>{if(latestCandles){latest=analyze(latestCandles);render();}});

@@ -11,7 +11,9 @@ let twapPrice = null;
 let twapAt = 0;
 let twapSourceAt = 0;
 let twapHistory = [];
-let openingReferences = {};
+let openingReferences = JSON.parse(
+  localStorage.getItem("btc15m_opening_refs_v1") || "{}"
+);
 
 let lastRecordedKey = null;
 let refreshBusy = false;

@@ -1,28 +1,17 @@
-BTC 15-MINUTE SIGNAL DESK - IPHONE SETUP
+BTC SIGNAL DESK - IPHONE PWA
 
-This is a Progressive Web App (PWA). It must be hosted at an HTTPS address before Safari can install it to the Home Screen.
+This is a browser-based, installable Progressive Web App. Host the files from the repository root using GitHub Pages, then open the Pages URL in Safari and choose Share > Add to Home Screen.
 
-EASIEST PUBLISH METHOD (GitHub Pages):
-1. Create/sign in to a GitHub account.
-2. Create a NEW PUBLIC repository named btc-15m-signal.
-3. Upload all files from this folder to the repository root (index.html, app.js, manifest.webmanifest, sw.js, icon-192.png, icon-512.png).
-4. In the repository, open Settings > Pages.
-5. Under Build and deployment, choose Deploy from a branch, select main and /(root), then Save.
-6. Wait for GitHub Pages to publish. Your site URL will look like https://YOUR-USERNAME.github.io/btc-15m-signal/
-7. Open that HTTPS URL in Safari on your iPhone.
-8. Tap Share (square with arrow) > Add to Home Screen > Add.
+AUTOMATIC DATA
+- Discovers the current BTC Up/Down 15-minute Polymarket event using its time-based market slug.
+- Reads public Polymarket market metadata and CLOB order books to populate the UP and DOWN best asks.
+- Requests the round's official opening reference from Polymarket's crypto-price endpoint.
+- Listens for Polymarket's public Chainlink BTC/USD RTDS stream for the live oracle price.
+- Uses Coinbase BTC/USD one-minute candles for technical indicators only. The app distinguishes this technical candle feed from the Chainlink resolution price.
+- Displays a 15-minute countdown and the planned 10-minute, 7-minute, 5-minute, and 2-minute timing stages.
 
-The GitHub Pages URL is public. The app does not store wallet details or private keys. Paper trades are stored in Safari's local browser storage on that iPhone and do not automatically sync to other devices. Clearing Safari website data can erase the local ledger.
-
-WHAT IT DOES:
-- Loads public BTC/USDT 1-minute candles from Binance public market-data endpoints.
-- Calculates EMA trend, RSI, 3-minute momentum, relative volume, and a hybrid directional score.
-- Compares the experimental score with manually entered UP/DOWN contract asks.
-- Records and settles simulated trades locally.
-
-WHAT IT DOES NOT DO:
-- It does not connect to Polymarket, use private endpoints, place real orders, connect a wallet, or bypass geographic restrictions.
-- It does not automatically fetch Polymarket prices. Enter permitted public market quotes manually.
-- Its probability estimate is not statistically calibrated or proof of an edge.
-
-If GitHub Pages is not available, any HTTPS static host that serves these files can be used.
+IMPORTANT LIMITATIONS
+- Public endpoints, browser CORS rules, and Polymarket's data availability can change. If official reference, live Chainlink price, or both order-book asks are missing or stale, the app should show PASS and disable paper-trade recording rather than guess.
+- The model probability is an experimental heuristic, not a calibrated forecast or evidence of an edge.
+- Paper trades are stored only in this browser's local storage.
+- No wallet, private API, or real order placement is used.

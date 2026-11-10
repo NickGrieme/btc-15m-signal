@@ -44,7 +44,7 @@ let twapAt = 0;
 let twapSourceAt = 0;
 let twapHistory = [];
 
-let openingReferences = loadOpeningReferences();
+let openingReferences = {};
 
 let lastRecordedKey = null;
 let lastSignalAttempt = {};
@@ -569,12 +569,13 @@ function saveOpeningReference(roundStart, price, sourceAt) {
   return true;
 }
 
+
 function ingestTwapRecord(record) {
   const payload = record?.payload || record || {};
   const symbol = String(payload.symbol || "btc/usd").toLowerCase();
   const windowSeconds = Number(payload.window_s ?? TWAP_WINDOW_SECONDS);
 
-  if (symbol !== "btc/usd" || windowSeconds !== TWAP_WINDOW_SECONDS) return;
+  if (symbol !== "btc/usd" || windowSeconds !== 60) return;
 
   const price = getTwapValue(payload);
   const sourceAt = normalizeTimestamp(
@@ -592,19 +593,12 @@ function ingestTwapRecord(record) {
     .filter(item => item.sourceAt >= Date.now() - 30 * 60 * 1000)
     .sort((a, b) => a.sourceAt - b.sourceAt);
 
-  /*
-   * A 60-second TWAP is a rolling window ending at its source timestamp.
-   * The first report at or after a round boundary, within 60 seconds, is
-   * the first report whose rolling window covers that boundary.
-   * Do not substitute a later report or interpolate a missing price.
-   */
-  const roundStart = Math.floor(sourceAt / (ROUND_SECONDS * 1000)) * ROUND_SECONDS;
-  const millisecondsAfterStart = sourceAt - roundStart * 1000;
+  const roundStart = Math.floor(
+    sourceAt / (ROUND_SECONDS * 1000)
+  ) * ROUND_SECONDS;
 
-  if (
-    millisecondsAfterStart >= 0 &&
-    millisecondsAfterStart <= TWAP_WINDOW_SECONDS * 1000
-  ) {
+  // Only the exact opening-second TWAP is valid.
+  if (sourceAt === roundStart * 1000) {
     saveOpeningReference(roundStart, price, sourceAt);
   }
 

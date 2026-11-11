@@ -118,16 +118,15 @@ function getExpectedRound() {
 function getReference() {
   if (!currentMarket) return null;
 
-  const savedReference = Number(
-    openingReferences[String(currentMarket.start)]
-  );
-
   if (
-    Number.isFinite(savedReference) &&
-    savedReference > 0
+    Number.isFinite(manualReference) &&
+    manualReference > 0
   ) {
-    return savedReference;
+    return manualReference;
   }
+
+  return null;
+}
 
   return null;
 }

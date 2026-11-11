@@ -128,8 +128,7 @@ function getReference() {
   return null;
 }
 
-  return null;
-}
+
 async function fetchOfficialReference(roundStart) {
   if (
     officialReferenceRound === roundStart &&

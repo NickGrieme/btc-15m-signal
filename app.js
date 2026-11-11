@@ -125,9 +125,6 @@ function getReference() {
     return manualReference;
   }
 
-}
-async function fetchOfficialReference(roundStart) {
-
 
   if (
     officialReferenceRound === roundStart &&

@@ -125,66 +125,7 @@ function getReference() {
     return manualReference;
   }
 
-
-  if (
-    officialReferenceRound === roundStart &&
-    Number.isFinite(officialReference) &&
-    officialReference > 0
-  ) {
-    return officialReference;
-  }
-
-  officialReferenceStatus = "Checking Polymarket for official opening reference...";
-
-  try {
-    const response = await fetch(
-      `${WORKER_URL}/reference?start=${roundStart}`,
-      { cache: "no-store" }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok || data.ok !== true) {
-      officialReferenceStatus = data.error || "Official reference not published yet.";
-      console.log("Official reference pending:", officialReferenceStatus);
-      return null;
-    }
-
-    const price = Number(data.openPrice);
-
-    if (!Number.isFinite(price) || price <= 0) {
-      officialReferenceStatus = "Invalid official reference received.";
-      return null;
-    }
-
-    officialReference = price;
-    officialReferenceRound = roundStart;
-    officialReferenceStatus = `Official Polymarket reference: $${price.toFixed(2)}`;
-
-    console.log("OFFICIAL POLYMARKET OPENING REFERENCE:", {
-      roundStart,
-      price,
-      source: data.source
-    });
-
-    const referenceInput = $("reference");
-
-    if (referenceInput && document.activeElement !== referenceInput) {
-      referenceInput.value = price.toFixed(2);
-    }
-
-    if (latestCandles) {
-      latest = analyze(latestCandles);
-      render();
-    }
-
-    return price;
-
-  } catch (error) {
-    officialReferenceStatus = `Reference lookup failed: ${error.message}`;
-    console.warn(officialReferenceStatus);
-    return null;
-  }
+  return null;
 }
 function fmtMoney(value) {
   return "$" + Number(value).toLocaleString("en-US", {

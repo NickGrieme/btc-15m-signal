@@ -44,7 +44,7 @@ let twapAt = 0;
 let twapSourceAt = 0;
 let twapHistory = [];
 
-let openingReferences = {};
+let openingReferences = loadOpeningReferences();
 
 let lastRecordedKey = null;
 let lastSignalAttempt = {};
@@ -118,15 +118,18 @@ function getExpectedRound() {
 function getReference() {
   if (!currentMarket) return null;
 
+  const savedReference = Number(
+    openingReferences[String(currentMarket.start)]
+  );
+
   if (
-    officialReferenceRound === currentMarket.start &&
-    Number.isFinite(officialReference) &&
-    officialReference > 0
+    Number.isFinite(savedReference) &&
+    savedReference > 0
   ) {
-    return officialReference;
+    return savedReference;
   }
 
-  return manualReference;
+  return null;
 }
 async function fetchOfficialReference(roundStart) {
   if (
@@ -923,21 +926,13 @@ async function refresh() {
       manualReference = null;
     }
 
-    const [candlesResult, marketResult, referenceResult] =
-      await Promise.allSettled([
-        fetchCandles(),
-        fetchPolymarket(),
-        fetchOfficialReference(expected.start)
-      ]);
+const [candlesResult, marketResult] =
+  await Promise.allSettled([
+    fetchCandles(),
+    fetchPolymarket()
+  ]);
 
     const errors = [];
-
-    if (referenceResult.status === "rejected") {
-      console.warn(
-        "Official reference lookup failed:",
-        referenceResult.reason
-      );
-    }
 
     if (candlesResult.status === "fulfilled") {
       latestCandles = candlesResult.value;
@@ -956,14 +951,16 @@ async function refresh() {
       );
     }
 
-    if (currentMarket) {
-      currentMarket.referenceStatus =
-        officialReferenceRound === currentMarket.start &&
-        Number.isFinite(officialReference) &&
-        officialReference > 0
-          ? `Official Polymarket reference: ${fmtMoney(officialReference)}`
-          : officialReferenceStatus;
-    }
+if (currentMarket) {
+  const savedReference = Number(
+    openingReferences[String(currentMarket.start)]
+  );
+
+  currentMarket.referenceStatus =
+    Number.isFinite(savedReference) && savedReference > 0
+      ? `Opening Chainlink 60-second TWAP: ${fmtMoney(savedReference)}`
+      : "Waiting for verified opening Chainlink TWAP.";
+}
 
     if (latest) render();
 

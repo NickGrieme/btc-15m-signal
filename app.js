@@ -30,6 +30,7 @@ let latest = null;
 let latestCandles = null;
 let currentMarket = null;
 let manualReference = null;
+let manualReferenceRound = null;
 
 let officialReference = null;
 let officialReferenceRound = null;
@@ -853,13 +854,10 @@ async function refresh() {
       lastRecordedKey = null;
     }
 
-    if (officialReferenceRound !== expected.start) {
-      officialReference = null;
-      officialReferenceRound = null;
-      officialReferenceStatus =
-        "Waiting for Polymarket's official opening reference.";
-      manualReference = null;
-    }
+if (manualReferenceRound !== expected.start) {
+  manualReference = null;
+  manualReferenceRound = expected.start;
+}
 
 const [candlesResult, marketResult] =
   await Promise.allSettled([

@@ -125,6 +125,9 @@ function getReference() {
     return manualReference;
   }
 
+}
+async function fetchOfficialReference(roundStart) {
+
 
 async function fetchOfficialReference(roundStart) {
   if (

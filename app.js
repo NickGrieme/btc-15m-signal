@@ -129,7 +129,6 @@ function getReference() {
 async function fetchOfficialReference(roundStart) {
 
 
-async function fetchOfficialReference(roundStart) {
   if (
     officialReferenceRound === roundStart &&
     Number.isFinite(officialReference) &&
